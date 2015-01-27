@@ -10,7 +10,7 @@ if [[ ! -f ${convertPath} || -z ${convertPath} ]]; then
 exit 0;
 fi
 
-version=`/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "${INFOPLIST_FILE}"`
+version=`/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "${INFOPLIST_FILE}"`
 
 # Check if we are under a Git or Hg repo
 if [ -d .git ] || git rev-parse --git-dir > /dev/null 2>&1; then
@@ -23,19 +23,27 @@ else
     build_num=`hg identify --num`
 fi;
 
+if [ -z "${build_num}"]; then
+    build_num=`/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "${INFOPLIST_FILE}"`
+fi
+
 #SRCROOT=..
 #CONFIGURATION_BUILD_DIR=.
 #UNLOCALIZED_RESOURCES_FOLDER_PATH=.
 
 #commit="3783bab"
 #branch="master"
-#version="3.4"
+#version="3.4.8"
 #build_num="9999"
 
 shopt -s extglob
 build_num="${build_num##*( )}"
 shopt -u extglob
-caption="${version} ($build_num)\n${branch}\n${commit}"
+if [ -z "${commit}"]; then
+    caption="${version} (${build_num})"
+else
+    caption="${version} ${branch}\n${commit}"
+fi
 echo $caption
 
 function abspath() { pushd . > /dev/null; if [ -d "$1" ]; then cd "$1"; dirs -l +0; else cd "`dirname \"$1\"`"; cur_dir=`dirs -l +0`; if [ "$cur_dir" == "/" ]; then echo "$cur_dir`basename \"$1\"`"; else echo "$cur_dir/`basename \"$1\"`"; fi; fi; popd > /dev/null; }
@@ -88,10 +96,10 @@ function processIcon() {
 
     width=`identify -format %w ${base_path}`
     height=`identify -format %h ${base_path}`
-    band_height=$((($height * 47) / 100))
+    band_height=$((($height * 40) / 100))
     band_position=$(($height - $band_height))
     text_position=$(($band_position - 3))
-    point_size=$(((13 * $width) / 100))
+    point_size=$(((16 * $width) / 100))
 
     echo "Image dimensions ($width x $height) - band height $band_height @ $band_position - point size $point_size"
 
